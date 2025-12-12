@@ -11,17 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const searchBookForm = document.getElementById('searchBook');
   const searchBookTitle = document.getElementById('searchBookTitle');
 
-  // const incompleteBookList = document.getElementById('incompleteBookList');
-  // const completeBookList = document.getElementById('completeBookList');
-
-  // Modal konfirmasi hapus
-  const confirmModal = document.getElementById('customConfirmModal');
-  const confirmMessage = document.getElementById('customConfirmMessage');
-  const confirmYes = document.getElementById('customConfirmYes');
-  const confirmNo = document.getElementById('customConfirmNo');
-  let bookToDelete = null; // Variabel untuk menyimpan ID buku yang akan dihapus
-
-  // Modal edit
+  // Variabel untuk Modal Edit 
   const editModal = document.getElementById('editBookModal');
   const editBookForm = document.getElementById('editBookForm');
   const editBookId = document.getElementById('editBookId');
@@ -73,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
       id,
       title,
       author,
-      year: parseInt(year), // Pastikan tahun adalah angka
+      year: parseInt(year),
       isComplete,
     };
   }
@@ -100,54 +90,45 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Buat elemen DOM untuk satu buku.
   function makeBookElement(bookObject) {
-    // Definisikan kelas dasar Tailwind untuk tombol
     const baseButtonClass =
       'text-sm font-bold py-2 px-4 rounded-md cursor-pointer transition-all duration-200 shadow hover:opacity-85 hover:shadow-md flex-grow';
 
     const container = document.createElement('div');
     container.setAttribute('data-bookid', bookObject.id);
     container.setAttribute('data-testid', 'bookItem');
-    // Terapkan kelas Tailwind untuk item buku
     container.className =
       'border border-stone-200 p-4 mb-4 rounded-md bg-stone-50';
 
     const title = document.createElement('h3');
     title.setAttribute('data-testid', 'bookItemTitle');
     title.innerText = bookObject.title;
-    // Terapkan kelas Tailwind untuk judul
     title.className = 'text-xl font-bold text-stone-800 mb-2 break-words';
 
     const author = document.createElement('p');
     author.setAttribute('data-testid', 'bookItemAuthor');
     author.innerText = `Penulis: ${bookObject.author}`;
-    // Terapkan kelas Tailwind untuk penulis
     author.className = 'text-sm text-stone-600 mb-1';
 
     const year = document.createElement('p');
     year.setAttribute('data-testid', 'bookItemYear');
     year.innerText = `Tahun: ${bookObject.year}`;
-    // Terapkan kelas Tailwind untuk tahun
     year.className = 'text-sm text-stone-600 mb-1';
 
     const actionContainer = document.createElement('div');
-    // Terapkan kelas Tailwind untuk kontainer aksi
     actionContainer.className = 'mt-4 flex flex-wrap gap-2';
 
     const deleteButton = document.createElement('button');
     deleteButton.setAttribute('data-testid', 'bookItemDeleteButton');
     deleteButton.innerText = 'Hapus Buku';
-    // Terapkan kelas Tailwind untuk tombol hapus
     deleteButton.className = `${baseButtonClass} bg-red-600 text-white`;
 
     const editButton = document.createElement('button');
     editButton.setAttribute('data-testid', 'bookItemEditButton');
     editButton.innerText = 'Edit Buku';
-    // Terapkan kelas Tailwind untuk tombol edit
     editButton.className = `${baseButtonClass} bg-yellow-500 text-stone-900`;
 
     const moveButton = document.createElement('button');
     moveButton.setAttribute('data-testid', 'bookItemIsCompleteButton');
-    // Terapkan kelas Tailwind untuk tombol pindah (hijau)
     moveButton.className = `${baseButtonClass} bg-lime-600 text-white`;
 
     if (bookObject.isComplete) {
@@ -156,9 +137,10 @@ document.addEventListener('DOMContentLoaded', function () {
       moveButton.innerText = 'Selesai dibaca';
     }
 
-    // Tambahkan event listener langsung ke tombol
+    // --- PERUBAHAN DI SINI ---
+    // Event listener langsung memanggil removeBook tanpa konfirmasi
     deleteButton.addEventListener('click', function () {
-      showDeleteConfirm(bookObject.id);
+      removeBook(bookObject.id);
     });
 
     editButton.addEventListener('click', function () {
@@ -194,8 +176,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.dispatchEvent(new Event(RENDER_EVENT));
     saveData();
-
-    // Reset form
     bookForm.reset();
   }
 
@@ -210,45 +190,19 @@ document.addEventListener('DOMContentLoaded', function () {
     saveData();
   }
 
-  // Hapus buku dari list.
+  // Hapus buku dari list (Langsung Hapus & Simpan).
   function removeBook(bookId) {
     const bookTargetIndex = findBookIndex(bookId);
 
     if (bookTargetIndex === -1) return;
 
-    books.splice(bookTargetIndex, 1);
-    document.dispatchEvent(new Event(RENDER_EVENT));
-    saveData(); // <--- PENTING: Panggil saveData setelah array 'books' dimodifikasi
+    books.splice(bookTargetIndex, 1); // Hapus dari array
+    document.dispatchEvent(new Event(RENDER_EVENT)); // Update Tampilan
+    saveData(); // Update LocalStorage
   }
 
-  // Tampilkan modal konfirmasi hapus.
-  function showDeleteConfirm(bookId) {
-    const book = findBook(bookId);
-    if (!book) return; // Pastikan buku ditemukan
+  // --- LOGIKA MODAL EDIT (Masih ada sesuai kode awal) ---
 
-    bookToDelete = bookId;
-    confirmMessage.innerText = `Apakah Anda yakin ingin menghapus buku "${book.title}"?`;
-    confirmModal.style.display = 'flex';
-  }
-
-  // Event listener untuk tombol 'Ya' di modal konfirmasi
-  confirmYes.addEventListener('click', function () {
-    if (bookToDelete !== null) {
-      removeBook(bookToDelete); // Panggil fungsi penghapusan
-    }
-    confirmModal.style.display = 'none';
-    bookToDelete = null;
-  });
-
-  // Event listener untuk tombol 'Tidak' di modal konfirmasi
-  confirmNo.addEventListener('click', function () {
-    confirmModal.style.display = 'none';
-    bookToDelete = null;
-  });
-
-  /**
-   * Tampilkan modal edit buku.
-   */
   function showEditModal(bookId) {
     const bookToEdit = findBook(bookId);
     if (!bookToEdit) return;
@@ -261,9 +215,6 @@ document.addEventListener('DOMContentLoaded', function () {
     editModal.style.display = 'flex';
   }
 
-  /**
-   * Simpan perubahan dari modal edit.
-   */
   function saveBookEdit() {
     const bookId = parseInt(editBookId.value);
     const book = findBook(bookId);
@@ -281,40 +232,30 @@ document.addEventListener('DOMContentLoaded', function () {
     editBookForm.reset();
   }
 
-  // Event listener untuk form edit
   editBookForm.addEventListener('submit', function (event) {
     event.preventDefault();
     saveBookEdit();
   });
 
-  // Event listener untuk tombol batal edit
   editBookCancel.addEventListener('click', function () {
     editModal.style.display = 'none';
     editBookForm.reset();
   });
 
-  /**
-   * Cari buku berdasarkan judul.
-   */
+  // --- FITUR PENCARIAN ---
+
   function searchBook() {
     const query = searchBookTitle.value.toLowerCase();
-    // Ambil daftar buku dari array global 'books'
     const filteredBooks = books.filter((book) =>
       book.title.toLowerCase().includes(query)
     );
 
-    // Render ulang hanya hasil yang difilter
-    // Trik: Gunakan event RENDER_EVENT dengan modifikasi sementara
-    
-    // Simpan referensi ke rak yang ada
     const incompleteList = document.getElementById('incompleteBookList');
     const completeList = document.getElementById('completeBookList');
     
-    // Kosongkan rak
     incompleteList.innerHTML = '';
     completeList.innerHTML = '';
     
-    // Tampilkan buku yang difilter
     for (const bookItem of filteredBooks) {
         const bookElement = makeBookElement(bookItem);
         if (!bookItem.isComplete) {
@@ -324,19 +265,17 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     
-    // Jika kolom pencarian kosong, trigger render penuh
     if (query === "") {
         document.dispatchEvent(new Event(RENDER_EVENT));
     }
   }
 
-  // Event listener untuk form submit (Tambah Buku)
+  // Event Listeners Umum
   bookForm.addEventListener('submit', function (event) {
     event.preventDefault();
     addBook();
   });
 
-  // Event listener untuk mengubah teks tombol submit berdasarkan checkbox
   bookFormIsComplete.addEventListener('change', function () {
     const submitSpan = bookFormSubmit.querySelector('span');
     if (bookFormIsComplete.checked) {
@@ -346,18 +285,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // Event listener untuk form pencarian
   searchBookForm.addEventListener('submit', function (event) {
     event.preventDefault();
     searchBook();
   });
 
-  // Event listener untuk pencarian real-time saat mengetik
   searchBookTitle.addEventListener('keyup', function () {
     searchBook();
   });
 
-  // Event listener untuk merender ulang UI
   document.addEventListener(RENDER_EVENT, function () {
     const incompleteBookList = document.getElementById('incompleteBookList');
     const completeBookList = document.getElementById('completeBookList');
@@ -375,12 +311,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // Event listener untuk konfirmasi penyimpanan (opsional)
-  document.addEventListener(SAVED_EVENT, function () {
-    console.log('Data berhasil disimpan.');
-  });
-
-  // Muat data saat halaman dimuat
   if (isStorageExist()) {
     loadDataFromStorage();
   }
