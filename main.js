@@ -11,15 +11,15 @@ document.addEventListener('DOMContentLoaded', function () {
   const searchBookForm = document.getElementById('searchBook');
   const searchBookTitle = document.getElementById('searchBookTitle');
 
-  const incompleteBookList = document.getElementById('incompleteBookList');
-  const completeBookList = document.getElementById('completeBookList');
+  // const incompleteBookList = document.getElementById('incompleteBookList');
+  // const completeBookList = document.getElementById('completeBookList');
 
   // Modal konfirmasi hapus
   const confirmModal = document.getElementById('customConfirmModal');
   const confirmMessage = document.getElementById('customConfirmMessage');
   const confirmYes = document.getElementById('customConfirmYes');
   const confirmNo = document.getElementById('customConfirmNo');
-  let bookToDelete = null;
+  let bookToDelete = null; // Variabel untuk menyimpan ID buku yang akan dihapus
 
   // Modal edit
   const editModal = document.getElementById('editBookModal');
@@ -28,7 +28,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const editBookTitle = document.getElementById('editBookTitle');
   const editBookAuthor = document.getElementById('editBookAuthor');
   const editBookYear = document.getElementById('editBookYear');
-  const editBookSave = document.getElementById('editBookSave');
   const editBookCancel = document.getElementById('editBookCancel');
 
   // Cek apakah localStorage didukung oleh browser.
@@ -219,21 +218,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     books.splice(bookTargetIndex, 1);
     document.dispatchEvent(new Event(RENDER_EVENT));
-    saveData();
+    saveData(); // <--- PENTING: Panggil saveData setelah array 'books' dimodifikasi
   }
 
   // Tampilkan modal konfirmasi hapus.
   function showDeleteConfirm(bookId) {
-    bookToDelete = bookId;
     const book = findBook(bookId);
+    if (!book) return; // Pastikan buku ditemukan
+
+    bookToDelete = bookId;
     confirmMessage.innerText = `Apakah Anda yakin ingin menghapus buku "${book.title}"?`;
     confirmModal.style.display = 'flex';
   }
 
   // Event listener untuk tombol 'Ya' di modal konfirmasi
   confirmYes.addEventListener('click', function () {
-    if (bookToDelete) {
-      removeBook(bookToDelete);
+    if (bookToDelete !== null) {
+      removeBook(bookToDelete); // Panggil fungsi penghapusan
     }
     confirmModal.style.display = 'none';
     bookToDelete = null;
@@ -297,20 +298,36 @@ document.addEventListener('DOMContentLoaded', function () {
    */
   function searchBook() {
     const query = searchBookTitle.value.toLowerCase();
-    const allBookItems = document.querySelectorAll(
-      '[data-testid="bookItem"]'
+    // Ambil daftar buku dari array global 'books'
+    const filteredBooks = books.filter((book) =>
+      book.title.toLowerCase().includes(query)
     );
 
-    allBookItems.forEach((item) => {
-      const title = item
-        .querySelector('[data-testid="bookItemTitle"]')
-        .innerText.toLowerCase();
-      if (title.includes(query)) {
-        item.style.display = ''; // Tampilkan jika cocok
-      } else {
-        item.style.display = 'none'; // Sembunyikan jika tidak cocok
-      }
-    });
+    // Render ulang hanya hasil yang difilter
+    // Trik: Gunakan event RENDER_EVENT dengan modifikasi sementara
+    
+    // Simpan referensi ke rak yang ada
+    const incompleteList = document.getElementById('incompleteBookList');
+    const completeList = document.getElementById('completeBookList');
+    
+    // Kosongkan rak
+    incompleteList.innerHTML = '';
+    completeList.innerHTML = '';
+    
+    // Tampilkan buku yang difilter
+    for (const bookItem of filteredBooks) {
+        const bookElement = makeBookElement(bookItem);
+        if (!bookItem.isComplete) {
+            incompleteList.append(bookElement);
+        } else {
+            completeList.append(bookElement);
+        }
+    }
+    
+    // Jika kolom pencarian kosong, trigger render penuh
+    if (query === "") {
+        document.dispatchEvent(new Event(RENDER_EVENT));
+    }
   }
 
   // Event listener untuk form submit (Tambah Buku)
@@ -342,6 +359,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Event listener untuk merender ulang UI
   document.addEventListener(RENDER_EVENT, function () {
+    const incompleteBookList = document.getElementById('incompleteBookList');
+    const completeBookList = document.getElementById('completeBookList');
+    
     incompleteBookList.innerHTML = '';
     completeBookList.innerHTML = '';
 
